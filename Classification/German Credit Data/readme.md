@@ -11,7 +11,7 @@ Each person is classified as good or bad credit risks according to the set of at
 
 #### My Approach
 * ##### Identify whether the data is Imbalanced or Not
-![](Images/credit_risk.PNG)
+        ![Classification/German Credit Data/Images/](credit_risk.png)
 As we can see 30% bad credit, 
 so we can tell that this dataset is not an Imbalanced dataset
 * ##### Perform EDA 
