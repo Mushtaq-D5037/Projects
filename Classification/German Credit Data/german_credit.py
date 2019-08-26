@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """
-Created on Sun Aug 18 16:18:04 2019
-
 @author: Mushtaq Mohammed
 """
 # import libraries
