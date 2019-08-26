@@ -9,3 +9,5 @@
 * visualization 
 * Time Series Analysis
 * PySpark
+* NLP 
+* Web Scraping
