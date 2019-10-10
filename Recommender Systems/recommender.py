@@ -10,7 +10,6 @@ df_retail = pd.read_csv('Online Retail.csv',encoding = "ISO-8859-1")
 df_retail.columns
 df_retail.info()
 
-
 # box plot
 df_retail['Quantity'].plot.box(showfliers = False)
 df_retail['UnitPrice'].plot.box(showfliers = False)
