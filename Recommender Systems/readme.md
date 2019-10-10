@@ -24,4 +24,4 @@ There are two approaches<br>
 
 **Item Based Approach:**<br>
 1.Build a item-user matrix ( in simple terms it is a transpose of user-item matrix)<br>
-2.Measure the similarities between the items
+2.Measure the similarities between the items<br>
