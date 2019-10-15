@@ -3,14 +3,21 @@
 * Credit Card Fraud Detection ( Imbalanced Dataset)
 * German Credit Data <br>
 
+#### Clustering
+* K-Means clustering 
+  * Numeric Data
+  * Mixed type Data
+* K-Prototypes for Mixed Data
+* K-Modes for Categorical Data
+
 #### Recommender Systems
 * Collaborative Filtering
   * User Based Collaborative Filtering
   * Item Based Collaborative Filtering
 
+
 #### I am Yet to Add
 * Regression Problems
-* Clustering
 * visualization 
 * Time Series Analysis
 * PySpark
