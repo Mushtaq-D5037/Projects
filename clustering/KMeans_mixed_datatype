@@ -1,0 +1,70 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Oct  3 09:45:38 2019
+
+@author: Mushtaq Mohammed
+"""
+# import libraries
+import pandas as pd
+# read csv file
+data = pd.read_csv('wm_new.csv')
+
+# some basic checks
+data.columns
+
+# selecting variables
+df = data[['age','household_income','marital_status','household_size',
+           'house_owner','net_worth' ,'children',
+           'occupation' ,'ethnicity' ,
+           'education'  ,'state_code', 
+           ]]
+
+# missing values
+df.isnull().sum()
+
+# Missing value Imputation
+df_copy = df.copy()
+df_copy.isnull().sum()
+df_copy = df_copy.dropna(subset=['occupation'])
+df_copy['age'].fillna(round(df_copy['age'].mean(),0),inplace = True)
+# filling with mode
+#df_copy['children'].fillna(df_copy['children'].mode()[0]),inplace = True)
+
+# numeric and categoric
+import numpy as np
+num = df_copy.select_dtypes(include=[np.number])
+cat = df_copy.select_dtypes(exclude=[np.number])
+ordinal_columns = df_copy[['household_income','education','net_worth']]
+
+num.columns
+cat.columns
+
+# label Encoding ordinal columns
+from sklearn.preprocessing import LabelEncoder
+le = LabelEncoder()
+for i in ordinal_columns:
+    ordinal_columns[i] = le.fit_transform(ordinal_columns[i])
+
+# one hot encoding nominal categorical variables  
+cat = cat.drop(ordinal_columns,axis = 1)
+cat_dummies = pd.get_dummies(cat)
+ 
+# normalizing the data
+num_normalized = (num - num.mean() ) / num.std()
+ordinal_normalized = (ordinal_columns - ordinal_columns.mean())/ ordinal_columns.std()
+
+# concatenating pandas dataframe
+normalized_df = pd.concat([num_normalized,ordinal_normalized,cat_dummies],axis = 1)    
+
+# concatenating numpy array
+# df_scaled = np.concatenate((num_scaled,cat_scale),axis=1)
+
+# applying k means
+from sklearn.cluster import KMeans
+
+X = normalized_df.values
+k = KMeans(n_clusters=12)             # number of clusters = 12
+k.fit(X)
+clusters = k.predict(X)
+df_copy['cluster'] = clusters
+
