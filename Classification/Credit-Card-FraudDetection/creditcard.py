@@ -395,10 +395,19 @@ for f in X_rus.columns:
 feature_importance = pd.Series(feature_dict).reset_index()
 feature_importance.columns = ['Feature', 'AUC_Drop']
 feature_importance.sort_values(by=['AUC_Drop'], ascending=False, inplace = True)
+
 imp_feat_before_shuffling = feature_importance.shape[0]
 imp_feat_after_shuffling  = feature_importance[feature_importance['AUC_Drop'] > 0].shape[0]
+
 print(f'total important features before shuffling:{imp_feat_before_shuffling}')
 print(f"total important features after  shuffling:{imp_feat_after_shuffling}")
+
+# visualizing
+temp = pd.Series(feature_importance[feature_importance['AUC_Drop'] > 0]['AUC_Drop'])
+temp.index = pd.Series(feature_importance[feature_importance['AUC_Drop'] > 0]['Feature'])
+temp.plot.bar(rot =0,
+              xlabel = 'Imp Features after Random Shuffling',
+              ylabel = 'importance')
 
 # Now let us build model with these 7 imp feature and check roc_auc
 # selecting features
