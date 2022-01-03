@@ -77,10 +77,9 @@ from sklearn.feature_selection import VarianceThreshold
 
 feature_selector = VarianceThreshold(threshold =0.01) 
 feature_selector.fit(X_rus)
-non_quasi_constatant = feature_selector.get_support()
+non_quasi_constant = X_rus.columns[feature_selector.get_support()]
 sum(feature_selector.get_support())
-
-Quasi_constant_features = [ c for c in X_rus if c not in X_rus[non_quasi_constatant]]
+Quasi_constant_features = [ c for c in X_rus.columns if c not in non_quasi_constant ]
 # -----------------------------------------------------------------------------
 
 # 3. correlated variable
