@@ -1,8 +1,22 @@
+"""
+Concepts:
+    - Sampling (undersampling, oversampling, smote)
+    - Quick short list Features (Removing constant, quasi-constant, Low ROC-AUC Score variables)
+    - Spotcheck best suitable algorithm (k-fold cross validation)
+    - Model Building
+    - Model Evaluation 
+    - Model Tuning
+    - Imp Feature Selection (Random Shuffling)
+    - Dockerizing
+    
+"""
+
 # importing libraries
 import pandas as pd
 import numpy  as np
 from sklearn.model_selection import train_test_split
 from imblearn.under_sampling import RandomUnderSampler
+
 
 # loading data
 data = '/../creditcard.csv'
@@ -16,6 +30,7 @@ df.shape
 # numeric and categoric column
 num_col = df.select_dtypes(include = [np.number]).columns.tolist()
 cat_col = df.select_dtypes(exclude = [np.number]).columns.tolist()
+
 
 # visualizing target variable distribution
 df['Class'].value_counts().plot(kind   = 'bar', 
@@ -32,11 +47,11 @@ df['Class'].value_counts(normalize =True)
 # splitting into train and test
 X = df.drop('Class', axis=1)
 y = df['Class']
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size= 0.3, random_state = 42,  stratify = y)
 # Stratify: ensures same proportion of samples to be present in y_train and y_test
 y_train.value_counts(normalize=True)
 y_test.value_counts(normalize=True)
-
 # =============================================================================
 # Sampling
 # =============================================================================
@@ -67,7 +82,6 @@ print(f'sampled trained data count:\n{y_rus.value_counts()}')
 # variables having only one value
 constant_features = [ col for col in X_rus.columns if X_rus[col].std()==0]
 # -----------------------------------------------------------------------------
-
 # 2. Quasi Constant Features
 # variables with 99% of only one level 
 # for example, 0 are 99% and 1 are less than 1%
@@ -79,6 +93,7 @@ feature_selector = VarianceThreshold(threshold =0.01)
 feature_selector.fit(X_rus)
 non_quasi_constant = X_rus.columns[feature_selector.get_support()]
 sum(feature_selector.get_support())
+
 Quasi_constant_features = [ c for c in X_rus.columns if c not in non_quasi_constant ]
 # -----------------------------------------------------------------------------
 
@@ -236,21 +251,22 @@ for name, model in models:
 # =============================================================================
 # 1.Logistic Regression
 lr = LogisticRegression()
-lr_train= lr.fit(X_rus, y_rus)
+lr.fit(X_rus, y_rus)
 lr_pred = lr.predict(X_test)
 lr_pred_train = lr.predict(X_rus)
 
-# 2.RandomForest
+# 2.Decision Tree
+dt = DecisionTreeClassifier()
+dt.fit(X_rus, y_rus)
+dt_pred  = dt.predict(X_test)
+dt_pred_train = dt.predict(X_rus)
+
+# 3.RandomForest
 rf = RandomForestClassifier()
-rf_train = rf.fit(X_rus, y_rus)
-rf_pred = rf.predict(X_test)
+rf.fit(X_rus, y_rus)
+# rf_pred = rf.predict(X_test)
+rf_pred = rf.predict_proba(X_test)[:,1]
 rf_pred_train = rf.predict(X_rus)
-
-# Random Forest Feature Importance
-feature  =  list(X_rus.columns)  
-feature_imp  = pd.Series(rf.feature_importances_, feature).sort_values(ascending = False)
-feature_imp.plot(kind = 'barh')
-
 
 # =============================================================================
 # # Model Evaluation
@@ -258,8 +274,8 @@ feature_imp.plot(kind = 'barh')
 from sklearn.metrics import accuracy_score, roc_auc_score, classification_report, confusion_matrix, roc_curve, auc
 
 # Checking Overfitting or Underfitting
-print('Logistic Regression Trainig Accuracy - {}'.format(accuracy_score(lr_pred_train,y_rus)))
-print('Logistic Regression Testing Accuracy - {}'.format(accuracy_score(lr_pred,y_test)))
+print('DecisionTree Training Accuracy - {}'.format(accuracy_score(dt_pred_train,y_rus)))
+print('DecisionTree Testing Accuracy  - {}'.format(accuracy_score(dt_pred,y_test)))
 
 # Logistic Regression
 lr_accuracy= accuracy_score(y_test, lr_pred)
@@ -332,3 +348,67 @@ print('Best Hyperparameters: %s' % result.best_params_)
 grid_search_predict = grid_search.predict (X_test)
 print(confusion_matrix(y_test,grid_search_predict))       # confusion Matrix
 print(classification_report(y_test,grid_search_predict))  # classification report
+
+# =============================================================================
+# Important Feature Selection
+# 1. Random Forest Feature Importance or any algorithmm linear/logistic regression coefficients
+# 2. Random Shuffling
+# =============================================================================
+
+# Random Forest Feature Importance
+feature  =  list(X_rus.columns)  
+feature_imp  = pd.Series(rf.feature_importances_, feature).sort_values(ascending = True)
+feature_imp.plot(kind = 'barh')
+# -----------------------------------------------------------------------------
+
+# Random Suffling
+# permute or shuffle the values of each feature, one at a time, and 
+# measure how much the permutation decrease or increases the roc_auc or accuracy or rmse etc.,
+# if variable is important, its performance drops highly
+# if variable is not important, performance doesn't affected highly or will have no effect
+
+
+# overall train roc_auc
+# Note: we need probabilites not predictions
+rf_pred_train = rf.predict_proba(X_rus.fillna(0))[:,1]
+rf_roc_train  = roc_auc_score(y_rus, rf_pred_train)
+
+# empty dictionary to store roc of each variable after shuffling
+feature_dict = {}
+
+# logic
+for f in X_rus.columns:
+    
+    X_copy = X_rus.copy()
+    
+    # shuffling values of individual feature
+    X_copy[f] = X_copy[f].sample(frac = 1).reset_index(drop = True)
+    
+    #make prediction
+    shuffle_roc_auc = roc_auc_score(y_rus, rf.predict_proba(X_copy.fillna(0))[:,1])
+    
+    # drop in auc
+    feature_dict[f] = rf_roc_train - shuffle_roc_auc
+    
+# let us convert to dataframe
+# for easy manipulation
+feature_importance = pd.Series(feature_dict).reset_index()
+feature_importance.columns = ['Feature', 'AUC_Drop']
+feature_importance.sort_values(by=['AUC_Drop'], ascending=False, inplace = True)
+imp_feat_before_shuffling = feature_importance.shape[0]
+imp_feat_after_shuffling  = feature_importance[feature_importance['AUC_Drop'] > 0].shape[0]
+print(f'total important features before shuffling:{imp_feat_before_shuffling}')
+print(f"total important features after  shuffling:{imp_feat_after_shuffling}")
+
+# Now let us build model with these 7 imp feature and check roc_auc
+# selecting features
+sel_feat = feature_importance[feature_importance['AUC_Drop']>0]['Feature']
+# building model
+rf.fit(X_rus[sel_feat], y_rus)
+rf_pred_aftershuffling = rf.predict_proba(X_test[sel_feat])[:,1]
+
+rf_roc_aftershuffling = roc_auc_score(y_test, rf_pred_aftershuffling)
+print(f'RandomForest: ROC_AUC - {np.round(rf_roc, 3)}')
+print(f'RandomForest after suffling: ROC_AUC - {(np.round(rf_roc_aftershuffling,3))}')
+# Observation
+# almost got same roc_auc
