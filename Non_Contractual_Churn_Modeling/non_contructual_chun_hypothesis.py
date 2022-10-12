@@ -19,7 +19,6 @@ gc.collect()
 def establish_con(server,database, user, pwd, env):
     '''function to establish connection with prodcution database:EU'''
     cnxn = pyodbc.connect('Driver={SQL Server};'
-    #'Server=AGNConnectusazrsqlp1011.database.windows.net;'
     f'Server={server};'
     f'Database={database};'
     f'UID={user};'
